@@ -64,9 +64,9 @@ def generate():
     device_name = data.get('device_name', 'Legacy Device')
     os_version = data.get('os_version', 'Unknown OS')
     
-    api_key = os.environ.get("GOOGLE_API_KEY")
+    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
-        return jsonify({"error": "GOOGLE_API_KEY not found in environment variables"}), 500
+        return jsonify({"error": "GEMINI_API_KEY/GOOGLE_API_KEY not found"}), 500
 
     client = genai.Client(api_key=api_key)
     
@@ -107,6 +107,85 @@ def generate():
         return jsonify({"html": generated_html})
         
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/identify', methods=['POST'])
+def identify():
+    """Identifies tech waste and provides recycling advice using Gemini."""
+    import base64
+    import json
+    
+    data = request.json
+    image_data = data.get('image')
+    additional_info = data.get('additional_info', '')
+    
+    if not image_data:
+        return jsonify({"error": "No image provided"}), 400
+        
+    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    
+    # Mock response for testing if no API key is provided
+    if not api_key:
+        print("WARNING: No GEMINI_API_KEY found. Returning mock data for demonstration.")
+        mock_data = {
+            "device_type": "Mock Desktop Computer",
+            "model": "Generic 90s PC",
+            "release_year": "1998",
+            "recyclability_score": 85,
+            "toxic_materials": ["Lead in solder", "Mercury in clock battery"],
+            "nearest_disposal_steps": [
+                "Remove the hard drive for data destruction.",
+                "Take motherboard to e-waste recycling center.",
+                "Steel case can be scrapped as metal."
+            ]
+        }
+        return jsonify(mock_data)
+        
+    client = genai.Client(api_key=api_key)
+    
+    # helper to clean base64
+    mime_type = "image/jpeg" # Default
+    if "data:" in image_data and ";base64," in image_data:
+        header, image_data = image_data.split(";base64,")
+        mime_type = header.split(":")[1]
+        
+    try:
+        image_bytes = base64.b64decode(image_data)
+        
+        prompt = f"""
+        You are a Circular Economy Expert. Analyze the provided image of a tech device.
+        Additional Context: {additional_info}
+        
+        Task:
+        1. Identify the device type and model.
+        2. Assess its recyclability (0-100 score).
+        3. Identify any toxic materials (e.g., battery type, heavy metals).
+        4. Provide specific steps for responsible disposal or recycling.
+        
+        Output valid JSON with keys:
+        - device_type (string)
+        - model (string)
+        - release_year (string)
+        - recyclability_score (integer)
+        - toxic_materials (array of strings)
+        - nearest_disposal_steps (array of strings)
+        """
+        
+        response = client.models.generate_content(
+            model="gemini-1.5-pro",
+            contents=[
+                prompt,
+                types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+            ],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
+        )
+        
+        return jsonify(json.loads(response.text))
+        
+    except Exception as e:
+        print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/display', methods=['GET'])

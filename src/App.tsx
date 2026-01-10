@@ -10,6 +10,9 @@ export type ScanData = {
   year: string;
   image: string;
   status?: string;
+  recyclability_score?: number;
+  toxic_materials?: string[];
+  disposal_steps?: string[];
 };
 
 export default function App() {
@@ -17,19 +20,43 @@ export default function App() {
   const [scannedItem, setScannedItem] = useState<ScanData | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string>('');
+  const [isScanning, setIsScanning] = useState(false);
 
-  const handleScan = () => {
-    // Simulate scanning a Dell Optiplex
-    const mockScan: ScanData = {
-      id: '1',
-      name: 'Dell Optiplex',
-      model: 'Optiplex 7010',
-      year: '2012',
-      image: 'https://images.unsplash.com/photo-1591238372408-8b98667c0460?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvbGQlMjBjb21wdXRlciUyMGhhcmR3YXJlfGVufDF8fHx8MTc2ODA4MzUwOXww&ixlib=rb-4.1.0&q=80&w=1080',
-      status: 'Identified'
-    };
-    setScannedItem(mockScan);
-    setCurrentScreen('results');
+  const handleScan = async (image: string, info: string) => {
+    setIsScanning(true);
+    try {
+      const response = await fetch('http://localhost:5000/identify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image, additional_info: info })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to analyze image');
+      }
+
+      const data = await response.json();
+      
+      const newScan: ScanData = {
+        id: Date.now().toString(),
+        name: data.device_type || 'Unknown Device',
+        model: data.model || '',
+        year: data.release_year || 'Unknown',
+        image: image,
+        status: 'Identified',
+        recyclability_score: data.recyclability_score,
+        toxic_materials: data.toxic_materials || [],
+        disposal_steps: data.nearest_disposal_steps || []
+      };
+
+      setScannedItem(newScan);
+      setCurrentScreen('results');
+    } catch (error) {
+      console.error('Scan failed:', error);
+      alert('Failed to analyze image. Please ensure the backend is running.');
+    } finally {
+      setIsScanning(false);
+    }
   };
 
   const handleBack = () => {
@@ -47,7 +74,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[var(--color-dark-bg)]">
-      {currentScreen === 'home' && <HomeScreen onScan={handleScan} />}
+      {currentScreen === 'home' && (
+        <HomeScreen 
+          onScan={handleScan} 
+          isScanning={isScanning}
+        />
+      )}
       {currentScreen === 'results' && scannedItem && (
         <ResultsScreen 
           scannedItem={scannedItem} 

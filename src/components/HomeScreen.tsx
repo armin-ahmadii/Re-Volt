@@ -1,8 +1,9 @@
-import { Camera, CheckCircle, Upload } from 'lucide-react';
+import { Camera, CheckCircle, Upload, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 
 type HomeScreenProps = {
-  onScan: () => void;
+  onScan: (image: string, info: string) => void;
+  isScanning: boolean;
 };
 
 type RecentScan = {
@@ -12,7 +13,7 @@ type RecentScan = {
   status: string;
 };
 
-export function HomeScreen({ onScan }: HomeScreenProps) {
+export function HomeScreen({ onScan, isScanning }: HomeScreenProps) {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [additionalInfo, setAdditionalInfo] = useState('');
 
@@ -68,9 +69,9 @@ export function HomeScreen({ onScan }: HomeScreenProps) {
             <div className="relative w-full max-w-3xl mx-auto aspect-[16/10] rounded-2xl border border-[var(--color-border)] bg-[var(--color-charcoal)] overflow-hidden">
               {/* Uploaded Image or Scanning Grid */}
               {uploadedImage ? (
-                <img 
-                  src={uploadedImage} 
-                  alt="Uploaded hardware" 
+                <img
+                  src={uploadedImage}
+                  alt="Uploaded hardware"
                   className="w-full h-full object-contain"
                 />
               ) : (
@@ -80,7 +81,7 @@ export function HomeScreen({ onScan }: HomeScreenProps) {
                     {/* Vertical lines */}
                     <div className="absolute inset-0 grid grid-cols-8">
                       {[...Array(9)].map((_, i) => (
-                        <div 
+                        <div
                           key={`v-${i}`}
                           className="border-r border-[var(--color-terminal-green)] opacity-20"
                         />
@@ -89,7 +90,7 @@ export function HomeScreen({ onScan }: HomeScreenProps) {
                     {/* Horizontal lines */}
                     <div className="absolute inset-0 grid grid-rows-5">
                       {[...Array(6)].map((_, i) => (
-                        <div 
+                        <div
                           key={`h-${i}`}
                           className="border-b border-[var(--color-terminal-green)] opacity-20"
                         />
@@ -130,6 +131,16 @@ export function HomeScreen({ onScan }: HomeScreenProps) {
                   </div>
                 </div>
               )}
+
+              {/* Loading Overlay */}
+              {isScanning && (
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-md z-50 flex flex-col items-center justify-center">
+                  <Loader2 size={64} className="text-[var(--color-terminal-green)] animate-spin mb-4" />
+                  <p className="text-xl font-mono text-[var(--color-terminal-green)] animate-pulse">
+                    ANALYZING HARDWARE...
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Additional Info Input */}
@@ -166,12 +177,12 @@ export function HomeScreen({ onScan }: HomeScreenProps) {
 
             {/* Scan Button */}
             <button
-              onClick={onScan}
-              disabled={!uploadedImage}
+              onClick={() => uploadedImage && onScan(uploadedImage, additionalInfo)}
+              disabled={!uploadedImage || isScanning}
               className="w-full h-16 rounded-2xl bg-gradient-to-r from-[var(--color-terminal-green)] to-[var(--color-electric-blue)] text-[var(--color-dark-bg)] font-mono uppercase tracking-wider flex items-center justify-center gap-3 hover:shadow-[0_0_30px_rgba(0,212,255,0.5)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
               <Camera size={24} />
-              Analyze Hardware
+              {isScanning ? 'Scanning...' : 'Analyze Hardware'}
             </button>
 
             {/* Recent Scans */}
@@ -181,13 +192,13 @@ export function HomeScreen({ onScan }: HomeScreenProps) {
               </h3>
               <div className="space-y-3">
                 {recentScans.map((scan) => (
-                  <div 
+                  <div
                     key={scan.id}
                     className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-charcoal)] border border-[var(--color-border)] hover:border-[var(--color-terminal-green)] transition-colors cursor-pointer group"
                   >
                     <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-[var(--color-border)] flex-shrink-0">
-                      <img 
-                        src={scan.image} 
+                      <img
+                        src={scan.image}
                         alt={scan.name}
                         className="w-full h-full object-cover"
                       />
@@ -200,8 +211,8 @@ export function HomeScreen({ onScan }: HomeScreenProps) {
                         {scan.status}
                       </span>
                     </div>
-                    <CheckCircle 
-                      size={18} 
+                    <CheckCircle
+                      size={18}
                       className="text-[var(--color-terminal-green)] fill-[var(--color-terminal-green)] opacity-0 group-hover:opacity-100 transition-opacity"
                     />
                   </div>

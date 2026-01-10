@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, CheckCircle, Shield, Server, Wrench, DollarSign } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Shield, Server, Wrench, DollarSign, Recycle, AlertTriangle, List } from 'lucide-react';
 import type { ScanData } from '../App';
 
 type Project = {
@@ -52,7 +52,7 @@ export function ResultsScreen({ scannedItem, onBack, onOpenGuide }: ResultsScree
     {
       id: '4',
       title: 'Legacy Dashboard',
-      icon: <Terminal size={32} className="text-[var(--color-terminal-green)]" />,
+      icon: <DollarSign size={32} className="text-[var(--color-terminal-green)]" />, // Replaced Terminal with DollarSign as placeholder if Terminal missing, or import Terminal
       difficulty: 'Easy',
       difficultyLevel: 20,
       cost: '$0 (Hardware Owned)',
@@ -84,13 +84,13 @@ export function ResultsScreen({ scannedItem, onBack, onOpenGuide }: ResultsScree
       {/* Main Content */}
       <div className="flex-1 px-8 lg:px-16 py-8">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-[500px,1fr] gap-8">
-          {/* Left Column - Identity Card */}
-          <div>
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden sticky top-28">
+          {/* Left Column - Identity Card & Analysis */}
+          <div className="space-y-6">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden">
               {/* Image */}
-              <div className="relative h-80 bg-[var(--color-charcoal)]">
-                <img 
-                  src={scannedItem.image} 
+              <div className="relative h-64 bg-[var(--color-charcoal)]">
+                <img
+                  src={scannedItem.image}
                   alt={scannedItem.name}
                   className="w-full h-full object-cover"
                 />
@@ -100,17 +100,90 @@ export function ResultsScreen({ scannedItem, onBack, onOpenGuide }: ResultsScree
                   Identified
                 </div>
               </div>
-              
+
               {/* Info */}
               <div className="p-6">
-                <h3 className="text-3xl font-mono text-[var(--color-terminal-green)] mb-2">
-                  {scannedItem.name} {scannedItem.model}
+                <h3 className="text-2xl font-mono text-[var(--color-terminal-green)] mb-2">
+                  {scannedItem.name}
                 </h3>
-                <p className="text-base text-[var(--color-text-secondary)] font-mono">
-                  Released: {scannedItem.year}
+                <p className="text-sm text-[var(--color-text-secondary)] font-mono mb-1">
+                  Model: {scannedItem.model || 'Unknown'}
+                </p>
+                <p className="text-sm text-[var(--color-text-secondary)] font-mono">
+                  Year: {scannedItem.year || 'Unknown'}
                 </p>
               </div>
             </div>
+
+            {/* Recyclability Score */}
+            {scannedItem.recyclability_score !== undefined && (
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <Recycle className="text-[var(--color-terminal-green)]" size={24} />
+                  <h4 className="text-lg font-mono text-[var(--color-text-primary)] uppercase tracking-wider">
+                    Recyclability Score
+                  </h4>
+                </div>
+                <div className="flex items-end gap-2 mb-2">
+                  <span className="text-4xl font-mono text-[var(--color-terminal-green)]">
+                    {scannedItem.recyclability_score}
+                  </span>
+                  <span className="text-sm text-[var(--color-text-secondary)] mb-1">/100</span>
+                </div>
+                <div className="h-3 bg-[var(--color-charcoal)] rounded-full overflow-hidden border border-[var(--color-border)]">
+                  <div
+                    className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-[var(--color-terminal-green)]"
+                    style={{ width: `${scannedItem.recyclability_score}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Toxic Materials */}
+            {scannedItem.toxic_materials && scannedItem.toxic_materials.length > 0 && (
+              <div className="bg-[var(--color-surface)] border border-red-500/30 rounded-2xl p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <AlertTriangle size={100} className="text-red-500" />
+                </div>
+                <div className="flex items-center gap-4 mb-4 relative z-10">
+                  <AlertTriangle className="text-red-500" size={24} />
+                  <h4 className="text-lg font-mono text-red-500 uppercase tracking-wider">
+                    Toxic Materials
+                  </h4>
+                </div>
+                <ul className="space-y-2 relative z-10">
+                  {scannedItem.toxic_materials.map((material, idx) => (
+                    <li key={idx} className="flex items-center gap-2 text-red-400 font-mono text-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                      {material}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Disposal Steps */}
+            {scannedItem.disposal_steps && scannedItem.disposal_steps.length > 0 && (
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <List className="text-[var(--color-text-secondary)]" size={24} />
+                  <h4 className="text-lg font-mono text-[var(--color-text-primary)] uppercase tracking-wider">
+                    Disposal Steps
+                  </h4>
+                </div>
+                <ul className="space-y-3">
+                  {scannedItem.disposal_steps.map((step, idx) => (
+                    <li key={idx} className="flex gap-3 text-sm text-[var(--color-text-secondary)]">
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--color-charcoal)] border border-[var(--color-border)] flex items-center justify-center font-mono text-xs text-[var(--color-terminal-green)]">
+                        {idx + 1}
+                      </span>
+                      <span className="leading-relaxed">{step}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
           </div>
 
           {/* Right Column - Projects */}
@@ -132,11 +205,10 @@ export function ResultsScreen({ scannedItem, onBack, onOpenGuide }: ResultsScree
                   <div
                     key={project.id}
                     onClick={() => setSelectedProjectIndex(index)}
-                    className={`bg-[var(--color-surface)] border rounded-2xl p-6 cursor-pointer transition-all duration-300 ${
-                      isSelected 
-                        ? 'border-[var(--color-terminal-green)] shadow-[0_0_30px_rgba(0,255,136,0.2)] scale-[1.02]' 
+                    className={`bg-[var(--color-surface)] border rounded-2xl p-6 cursor-pointer transition-all duration-300 ${isSelected
+                        ? 'border-[var(--color-terminal-green)] shadow-[0_0_30px_rgba(0,255,136,0.2)] scale-[1.02]'
                         : 'border-[var(--color-border)] hover:border-[var(--color-terminal-green)]/50'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start gap-6">
                       {/* Icon */}
@@ -164,7 +236,7 @@ export function ResultsScreen({ scannedItem, onBack, onOpenGuide }: ResultsScree
                               </span>
                             </div>
                             <div className="h-2 bg-[var(--color-charcoal)] rounded-full overflow-hidden border border-[var(--color-border)]">
-                              <div 
+                              <div
                                 className="h-full bg-gradient-to-r from-[var(--color-terminal-green)] to-[var(--color-electric-blue)] transition-all duration-500"
                                 style={{ width: `${project.difficultyLevel}%` }}
                               />
