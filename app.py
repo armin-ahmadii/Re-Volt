@@ -46,7 +46,8 @@ def get_system_stats():
     return {
         "cpu_usage": cpu_usage,
         "ram_usage": ram_usage,
-        "cpu_temp": cpu_temp
+        "cpu_temp": cpu_temp,
+        "ip_address": get_ip_address()
     }
 
 # --- Routes ---

@@ -48,6 +48,15 @@ export function ResultsScreen({ scannedItem, onBack, onOpenGuide }: ResultsScree
       difficultyLevel: 60,
       cost: '$0 (Hardware Owned)',
       description: 'Set up a virtualization environment with Proxmox. Run multiple VMs for testing, learning, and development projects.'
+    },
+    {
+      id: '4',
+      title: 'Legacy Dashboard',
+      icon: <Terminal size={32} className="text-[var(--color-terminal-green)]" />,
+      difficulty: 'Easy',
+      difficultyLevel: 20,
+      cost: '$0 (Hardware Owned)',
+      description: 'Repurpose this device into a retro-futuristic dashboard. Displays real-time system stats (CPU, RAM, Temp) with a cyberpunk aesthetic.'
     }
   ];
 

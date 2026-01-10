@@ -20,6 +20,103 @@ type StepGuideModalProps = {
 
 export function StepGuideModal({ projectName, onClose }: StepGuideModalProps) {
   const [copiedStep, setCopiedStep] = useState<number | null>(null);
+  const [generationStatus, setGenerationStatus] = useState<'idle' | 'generating' | 'success' | 'error'>('idle');
+  const [dashboardUrl, setDashboardUrl] = useState<string>('');
+  const [errorMsg, setErrorMsg] = useState<string>('');
+
+  const handleGenerateDashboard = async () => {
+    setGenerationStatus('generating');
+    try {
+      // 1. Get Local IP
+      const statsRes = await fetch('http://localhost:5000/stats');
+      const statsData = await statsRes.json();
+      const ip = statsData.ip_address || 'localhost';
+
+      // 2. Generate Dashboard
+      const genRes = await fetch('http://localhost:5000/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          device_name: 'Legacy Device',
+          os_version: 'Unknown'
+        })
+      });
+
+      if (!genRes.ok) throw new Error('Generation failed');
+
+      setDashboardUrl(`http://${ip}:5000/display`);
+      setGenerationStatus('success');
+    } catch (err) {
+      console.error(err);
+      setErrorMsg('Failed to connect to backend. Is python app.py running?');
+      setGenerationStatus('error');
+    }
+  };
+
+  if (projectName === 'Legacy Dashboard') {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-[fade-in_0.3s_ease-out] p-4 lg:p-8">
+        <div className="bg-[var(--color-dark-bg)] w-full max-w-2xl rounded-3xl border border-[var(--color-border)] flex flex-col overflow-hidden shadow-[0_0_60px_rgba(0,255,136,0.3)]">
+          <div className="bg-[var(--color-surface)] border-b border-[var(--color-border)] px-8 py-6 flex items-center justify-between">
+            <h2 className="text-2xl font-mono text-[var(--color-terminal-green)]">Legacy Dashboard Setup</h2>
+            <button onClick={onClose} className="p-2 hover:bg-[var(--color-charcoal)] rounded-lg transition-colors">
+              <X size={24} className="text-[var(--color-text-primary)]" />
+            </button>
+          </div>
+
+          <div className="p-8 flex flex-col items-center text-center gap-6">
+            <div className="w-20 h-20 rounded-full bg-[var(--color-terminal-green)]/10 flex items-center justify-center mb-2">
+              <Terminal size={40} className="text-[var(--color-terminal-green)]" />
+            </div>
+
+            <p className="text-[var(--color-text-secondary)] text-lg">
+              Revive your old device by turning it into a futuristic system monitor.
+            </p>
+
+            {generationStatus === 'idle' && (
+              <button
+                onClick={handleGenerateDashboard}
+                className="px-8 py-4 rounded-xl bg-[var(--color-terminal-green)] text-[var(--color-dark-bg)] font-mono text-lg uppercase tracking-wider hover:shadow-[0_0_30px_rgba(0,255,136,0.4)] transition-all"
+              >
+                Generate Dashboard
+              </button>
+            )}
+
+            {generationStatus === 'generating' && (
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-8 h-8 border-2 border-[var(--color-terminal-green)] border-t-transparent rounded-full animate-spin" />
+                <p className="font-mono text-[var(--color-terminal-green)] animate-pulse">
+                  Consulting Gemini AI...
+                </p>
+              </div>
+            )}
+
+            {generationStatus === 'success' && (
+              <div className="w-full bg-[var(--color-surface)] border border-[var(--color-terminal-green)] rounded-xl p-6 animate-[scale-in_0.3s_ease-out]">
+                <h3 className="text-[var(--color-terminal-green)] font-mono text-xl mb-4">Dashboard Ready!</h3>
+                <p className="text-[var(--color-text-secondary)] mb-4">
+                  Open this URL on your legacy device:
+                </p>
+                <div className="bg-black p-4 rounded-lg border border-[var(--color-border)] mb-4 break-all">
+                  <code className="text-[var(--color-electric-blue)] text-lg">{dashboardUrl}</code>
+                </div>
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  Make sure the device is on the same Wi-Fi network.
+                </p>
+              </div>
+            )}
+
+            {generationStatus === 'error' && (
+              <div className="text-red-500 font-mono bg-red-500/10 p-4 rounded-xl border border-red-500/20">
+                {errorMsg}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   const steps: Step[] = [
     {
@@ -137,7 +234,7 @@ export function StepGuideModal({ projectName, onClose }: StepGuideModalProps) {
                         </h3>
                       </div>
                     </div>
-                    
+
                     <p className="text-base text-[var(--color-text-secondary)] mb-4 leading-relaxed">
                       {step.description}
                     </p>
