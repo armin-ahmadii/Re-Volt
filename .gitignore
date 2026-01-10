@@ -5,3 +5,5 @@ generated_dashboard.html
 .DS_Store
 .env
 
+
+node_modules
