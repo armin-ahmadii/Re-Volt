@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/* Cyberpunk Utility Theme */
+@theme {
+  /* Colors - Cyberpunk Palette */
+  --color-dark-bg: #0a0e14;
+  --color-charcoal: #15191f;
+  --color-terminal-green: #00ff88;
+  --color-electric-blue: #00d4ff;
+  --color-neon-purple: #b74aff;
+  --color-text-primary: #e6e8eb;
+  --color-text-secondary: #8a8f98;
+  --color-border: #2a2f38;
+  --color-surface: #1a1f28;
+  
+  /* Font Families */
+  --font-family-mono: "JetBrains Mono", "Roboto Mono", monospace;
+  --font-family-sans: ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-dark-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-mono);
+  font-weight: 600;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Animations */
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Scrollbar styles */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
