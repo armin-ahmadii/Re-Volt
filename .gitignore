@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 generated_dashboard.html
 .DS_Store
+.env
+

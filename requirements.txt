@@ -2,3 +2,5 @@ flask
 flask-cors
 psutil
 google-genai
+python-dotenv
+
