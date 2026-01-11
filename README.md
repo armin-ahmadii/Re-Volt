@@ -66,7 +66,7 @@ Powered by **Google Gemini AI**, it analyzes images of your hardware in real-tim
 3.  **Scan**: Upload an image of any computer part (e.g., an old GPU).
 4.  **Review**: See the identified hardware details instantly.
 5.  **Explore**: Browse suggested projects. Click "Load More" if you want alternatives.
-6.  **Build**: Select a project to generate a full, deep-dive guide.
+6.  **Build**: Select a project to generate a full, deep-dive guide!
 
 ## 🤝 Contributing
 
