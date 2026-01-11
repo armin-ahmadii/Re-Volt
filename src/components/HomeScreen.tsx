@@ -29,7 +29,7 @@ export function HomeScreen({ onScan, onOpenSettings }: HomeScreenProps) {
           Re-Volt
         </h1>
         <p className="text-[var(--color-text-secondary)] text-lg tracking-wide">
-          Identify. Repurpose. Revive.
+          Recognize. Repurpose. Revive.
         </p>
       </header>
 

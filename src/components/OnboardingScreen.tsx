@@ -76,12 +76,12 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
                 {/* Header */}
                 <div className="bg-[var(--color-charcoal)]/50 border-b border-[var(--color-border)] px-8 py-6">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-6">
                         <div className="w-12 h-12 rounded-xl bg-[var(--color-terminal-green)]/10 flex items-center justify-center border border-[var(--color-terminal-green)]/20">
                             <User className="text-[var(--color-terminal-green)]" size={24} />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-mono text-[var(--color-text-primary)]">Welcome to TechCycle</h2>
+                            <h2 className="text-2xl font-mono text-[var(--color-text-primary)]">Welcome to Re-Volt</h2>
                             <p className="text-sm text-[var(--color-text-secondary)]">Let's personalize your experience</p>
                         </div>
                     </div>

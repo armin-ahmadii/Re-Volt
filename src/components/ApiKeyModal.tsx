@@ -5,10 +5,11 @@ type ApiKeyModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSave: (key: string) => void;
+  onReset?: () => void;
   initialKey?: string;
 };
 
-export function ApiKeyModal({ isOpen, onClose, onSave, initialKey = '' }: ApiKeyModalProps) {
+export function ApiKeyModal({ isOpen, onClose, onSave, onReset, initialKey = '' }: ApiKeyModalProps) {
   const [apiKey, setApiKey] = useState(initialKey);
 
   useEffect(() => {
@@ -31,7 +32,7 @@ export function ApiKeyModal({ isOpen, onClose, onSave, initialKey = '' }: ApiKey
             <Key className="text-[var(--color-terminal-green)]" size={20} />
             API Configuration
           </h2>
-          <button 
+          <button
             onClick={onClose}
             className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
           >
@@ -54,19 +55,44 @@ export function ApiKeyModal({ isOpen, onClose, onSave, initialKey = '' }: ApiKey
               required
             />
             <p className="text-xs text-[var(--color-text-secondary)] flex items-center gap-1">
-              Don't have a key? 
-              <a 
-                href="https://aistudio.google.com/app/apikey" 
-                target="_blank" 
+              Don't have a key?
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-[var(--color-terminal-green)] hover:underline flex items-center gap-0.5"
               >
-                Get one here <ExternalLink size={10} />
+                ‎ Get one here <ExternalLink size={10} />
               </a>
             </p>
           </div>
 
-          <div className="flex justify-end gap-3">
+          {onReset && (
+            <div className="pt-4 border-t border-[var(--color-border)]">
+              <h3 className="text-sm font-mono text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">
+                Danger Zone
+              </h3>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  Reset your profile and onboarding data.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('Are you sure you want to reset your profile? This cannot be undone.')) {
+                      onReset();
+                      onClose();
+                    }
+                  }}
+                  className="px-4 py-2 rounded-xl border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-colors font-mono text-xs uppercase tracking-wider"
+                >
+                  Reset Info
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
@@ -76,9 +102,8 @@ export function ApiKeyModal({ isOpen, onClose, onSave, initialKey = '' }: ApiKey
             </button>
             <button
               type="submit"
-              className="px-6 py-2 rounded-xl bg-[var(--color-terminal-green)] text-[var(--color-dark-bg)] font-mono text-sm uppercase tracking-wider flex items-center gap-2 hover:shadow-[0_0_20px_rgba(0,255,136,0.3)] transition-all"
+              className="px-6 py-2 rounded-xl bg-[var(--color-terminal-green)] text-[var(--color-dark-bg)] font-mono text-sm uppercase tracking-wider hover:shadow-[0_0_20px_rgba(0,255,136,0.3)] transition-all"
             >
-              <Save size={16} />
               Save Key
             </button>
           </div>

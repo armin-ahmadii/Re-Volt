@@ -24,6 +24,7 @@ export default function App() {
   const [apiKey, setApiKey] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 
   useEffect(() => {
     const envKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -63,45 +64,78 @@ export default function App() {
       return;
     }
 
+    // Step 1: Identify Hardware (Fast)
     setIsAnalyzing(true);
-    const toastId = toast.loading('Analyzing hardware...');
+    const toastId = toast.loading('Identifying hardware...');
 
     try {
       const geminiService = new GeminiService(apiKey);
-      // Pass user profile to analyzeImage
-      const result = await geminiService.analyzeImage(image, info, userProfile || undefined);
 
-      const legacyProject: any = {
-        title: 'Legacy Dashboard',
-        difficulty: 'Beginner',
-        time: '5 minutes',
-        description: 'Repurpose this device into a retro-futuristic dashboard. Displays real-time system stats (CPU, RAM, Temp) with a cyberpunk aesthetic.',
-        tools: ['Python', 'Flask', 'Browser'],
-        steps: ['Connect to backend', 'Generate Dashboard', 'View on device'],
-        skills: ['Networking', 'Web Development', 'System Administration'] // Added skills
-      };
+      // Fast identification
+      const hardwareResult = await geminiService.identifyHardware(image, info);
 
-      // Map result to ScanData if necessary, but AnalysisResult looks compatible
-      // with what we want to display.
-      // We might need to ensure IDs are added if ResultsScreen needs them.
-      const scanDataWithId = {
-        ...result,
+      const scanData: ScanData = {
+        ...hardwareResult,
         id: Date.now().toString(),
         image: image,
-        projects: [...result.projects, legacyProject]
+        projects: [] // Start empty
       };
 
-      setScannedItem(scanDataWithId);
-      setCurrentScreen('results');
+      setScannedItem(scanData);
+      setCurrentScreen('results'); // Navigate immediately
       toast.dismiss(toastId);
-      toast.success('Analysis complete!');
+      toast.success('Hardware Identified!');
+      setIsAnalyzing(false);
+
+      // Step 2: Load initial projects in background
+      setIsLoadingProjects(true);
+
+      // Fetch 1 of each difficulty for the start
+      const projects = await geminiService.suggestProjects(
+        hardwareResult.name,
+        hardwareResult.model,
+        userProfile || undefined,
+        undefined, // No specific difficulty means mixed bag
+        3
+      );
+
+      setScannedItem(prev => prev ? { ...prev, projects: projects } : null); // Update with projects
+      setIsLoadingProjects(false);
+
     } catch (error: any) {
       console.error(error);
       toast.dismiss(toastId);
-      // Use the actual error message which might be quota related
       toast.error(error.message || 'Failed to analyze image. Please check your API key.');
-    } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleLoadMore = async (difficulty: string) => {
+    if (!scannedItem || !apiKey) return;
+
+    setIsLoadingProjects(true);
+    const geminiService = new GeminiService(apiKey);
+
+    try {
+      const newProjects = await geminiService.suggestProjects(
+        scannedItem.name,
+        scannedItem.model,
+        userProfile || undefined,
+        difficulty,
+        3 // Load 3 more of that difficulty
+      );
+
+      setScannedItem(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          projects: [...prev.projects, ...newProjects]
+        };
+      });
+    } catch (error) {
+      toast.error("Failed to load more projects");
+    } finally {
+      setIsLoadingProjects(false);
     }
   };
 
@@ -139,7 +173,9 @@ export default function App() {
           scannedItem={scannedItem}
           onBack={handleBack}
           onOpenGuide={handleOpenGuide}
-          userProfile={userProfile} // Pass profile to ResultsScreen for "Suggested" logic
+          userProfile={userProfile}
+          isLoadingProjects={isLoadingProjects}
+          onLoadMore={handleLoadMore}
         />
       )}
 
@@ -161,6 +197,12 @@ export default function App() {
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
         onSave={handleSaveApiKey}
+        onReset={() => {
+          localStorage.removeItem('user_profile');
+          setUserProfile(null);
+          setCurrentScreen('onboarding');
+          toast.success('App reset successfully');
+        }}
         initialKey={apiKey}
       />
     </div>

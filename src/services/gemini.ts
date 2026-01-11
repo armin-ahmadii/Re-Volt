@@ -32,8 +32,53 @@ export class GeminiService {
         this.genAI = new GoogleGenerativeAI(apiKey);
     }
 
-    async analyzeImage(imageBase64: string, additionalInfo?: string, userProfile?: { occupation: string; year?: string; resumeText: string; skills: string[] }): Promise<AnalysisResult> {
-        // Switching to 'gemini-flash-latest' as it is a stable alias and avoids quota issues with 2.0-flash
+    async identifyHardware(imageBase64: string, additionalInfo?: string): Promise<AnalysisResult> {
+        const model = this.genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+
+        const prompt = `
+      Analyze this image of computer hardware. 
+      Identify the item, its model (if visible or inferable), and approximate year of manufacture.
+      
+      ${additionalInfo ? `Additional context from user: ${additionalInfo}` : ''}
+
+      Return the response in strictly valid JSON format:
+      {
+        "name": "Item Name",
+        "model": "Model Number/Name",
+        "year": "YYYY",
+        "status": "Identified",
+        "projects": [] 
+      }
+      `;
+
+        const imagePart = {
+            inlineData: {
+                data: imageBase64.split(',')[1],
+                mimeType: 'image/jpeg',
+            },
+        };
+
+        try {
+            const result = await model.generateContent([prompt, imagePart]);
+            const response = await result.response;
+            const text = response.text().replace(/```json\n?|\n?```/g, '').trim();
+            return JSON.parse(text) as AnalysisResult;
+        } catch (error: any) {
+            console.error('Error identifying hardware:', error);
+            if (error.message?.includes('429') || error.status === 429) {
+                throw new Error('API Quota Exceeded. Please check your plan or try again later.');
+            }
+            throw new Error(error.message || 'Failed to identify hardware.');
+        }
+    }
+
+    async suggestProjects(
+        hardwareName: string,
+        hardwareModel: string,
+        userProfile?: { occupation: string; year?: string; resumeText: string; skills: string[] },
+        difficulty?: string,
+        count: number = 3
+    ): Promise<Project[]> {
         const model = this.genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
 
         const profileContext = userProfile ? `
@@ -42,86 +87,67 @@ export class GeminiService {
         ${userProfile.year ? `- Year/Grade: ${userProfile.year}` : ''}
         - Resume/Skills Context: ${userProfile.resumeText}
         
-        Tailor the project suggestions to this user's background. 
-        - If they are a student, focus on learning fundamentals and academic value.
-        - If they are a professional, focus on practical utility or advanced concepts.
-        - Use the resume context to suggest projects that build upon their existing skills or help them develop new desired skills.
+        Tailor the project suggestions to this user's background.
         ` : '';
 
+        const difficultyContext = difficulty ? `Generate ${count} ${difficulty} projects.` : `Generate ${count} projects (1 Easy, 1 Medium, 1 Hard).`;
+
         const prompt = `
-      Analyze this image of old computer hardware. 
-      Identify the item, its model (if visible or inferable), and approximate year of manufacture.
+      I have a piece of hardware: ${hardwareName} (${hardwareModel}).
       
       ${profileContext}
 
-      Then, suggest **9 creative and practical DIY projects** (3 Easy, 3 Medium, 3 Hard) to repurpose or modernize this specific hardware.
+      Suggest creative and practical DIY projects to repurpose this.
+      ${difficultyContext}
       
-      For each project, identify **3 specific, highly-rated YouTube tutorials** that are relevant. 
+      For each project, identify **3 specific, highly-rated YouTube tutorials**.
       Provide the **exact video title** and the **channel name**.
       
-      ${additionalInfo ? `Additional context from user: ${additionalInfo}` : ''}
-
-      CRITICAL INSTRUCTION: You are an expert technical tutor. Your goal is to educate the user.
-      For the "steps" in each project:
-      1. Be extremely detailed. Don't just say "Install software", explain HOW and WHY.
-      2. Use a clear, encouraging, and informative tone.
-      3. Include specific commands or configuration details where applicable.
-      4. Explain technical concepts briefly if they are complex.
-      5. If a step involves code or terminal commands, include them clearly.
-
-      Return the response in strictly valid JSON format with the following structure:
-      {
-        "name": "Item Name",
-        "model": "Model Number/Name",
-        "year": "YYYY",
-        "status": "Project Found!",
-        "projects": [
+      CRITICAL:
+      1. Steps must be DETAILED and BEGINNER-FRIENDLY.
+      2. Explain "how" to do it, not just "what" to do (e.g., instead of "Install OS", say "Download the Batocera image, use BalenaEtcher to flash it to a USB drive, and boot from USB").
+      3. Return strictly valid JSON array of projects.
+      
+      Structure:
+      [
           {
             "title": "Project Title",
-            "difficulty": "Easy", // Must be "Easy", "Medium", or "Hard"
-            "time": "Estimated Time (e.g., 2 hours)",
-            "description": "A short, catchy description of what this project achieves.",
-            "whySuggested": "One sentence explaining why this fits the user's profile.",
-            "skillsGained": ["Skill 1", "Skill 2", "Skill 3"],
-            "tutorialVideos": [
-              { "title": "Exact Video Title", "channel": "Channel Name" },
-              { "title": "Another Video Title", "channel": "Channel Name" }
-            ],
-            "tools": ["List", "of", "tools", "needed"],
-            "steps": ["Step 1: Title - Detailed explanation...", "Step 2: Title - Detailed explanation..."]
-          },
-          // ... 8 more projects (3 Easy, 3 Medium, 3 Hard total)
-        ]
-      }
-      
-      Do not include markdown formatting (like \`\`\`json) in the response, just the raw JSON string.
-    `;
-
-        const imagePart = {
-            inlineData: {
-                data: imageBase64.split(',')[1],
-                mimeType: 'image/jpeg', // Assuming JPEG for simplicity, but could be dynamic
-            },
-        };
+            "difficulty": "Easy", // or Medium, Hard
+            "time": "Estimated Time",
+            "description": "Short description",
+            "whySuggested": "Reason",
+            "skillsGained": ["Skill 1"],
+            "tutorialVideos": [{"title": "T", "channel": "C"}],
+            "tools": ["Tool 1"],
+            "steps": ["Step 1 summary", "Step 2 summary"]
+          }
+      ]
+      `;
 
         try {
-            const result = await model.generateContent([prompt, imagePart]);
+            const result = await model.generateContent(prompt);
             const response = await result.response;
-            const text = response.text();
+            const text = response.text().replace(/```json\n?|\n?```/g, '').trim();
+            const parsed = JSON.parse(text);
 
-            // Clean up any potential markdown formatting if the model adds it despite instructions
-            const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
-
-            return JSON.parse(cleanText) as AnalysisResult;
-        } catch (error: any) {
-            console.error('Error analyzing image with Gemini:', error);
-
-            if (error.message?.includes('429') || error.status === 429) {
-                throw new Error('API Quota Exceeded. Please check your plan or try again later.');
+            if (Array.isArray(parsed)) {
+                return parsed as Project[];
+            } else if (parsed && Array.isArray(parsed.projects)) {
+                return parsed.projects as Project[];
             }
 
-            // Pass the original error message if it's specific, otherwise generic
-            throw new Error(error.message || 'Failed to analyze image. Please check your API key and try again.');
+            console.error("Unexpected JSON structure:", parsed);
+            return [];
+        } catch (error) {
+            console.error("Error suggesting projects:", error);
+            return [];
         }
+    }
+
+    // Keeping for backward compatibility or direct calls if needed, but routing to new methods recommended
+    async analyzeImage(imageBase64: string, additionalInfo?: string, userProfile?: any): Promise<AnalysisResult> {
+        const hardware = await this.identifyHardware(imageBase64, additionalInfo);
+        const projects = await this.suggestProjects(hardware.name, hardware.model, userProfile);
+        return { ...hardware, projects };
     }
 }
