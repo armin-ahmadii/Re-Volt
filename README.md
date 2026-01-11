@@ -2,10 +2,10 @@
 
 **Identify. Repurpose. Re-Volt.**
 
-Re-Volt (formerly TechCycle) is a smart web application designed to help you reduce e-waste by identifying old computer hardware and suggesting creative, DIY repurposing projects. 
+Re-Volt is a smart web application designed to help you reduce e-waste by identifying old computer hardware and suggesting creative, DIY repurposing projects. 
 Powered by **Google Gemini AI**, it analyzes images of your hardware in real-time and generates tailored, step-by-step guides to give your old tech a new life.
 
-![Re-Volt Screenshot](https://images.unsplash.com/photo-1550009158-9ebf69173e03?q=80&w=2000&auto=format&fit=crop) *(Placeholder)*
+![Re-Volt Screenshot](https://images.unsplash.com/photo-1550009158-9ebf69173e03?q=80&w=2000&auto=format&fit=crop)
 
 ## ✨ Features
 
@@ -56,8 +56,8 @@ Powered by **Google Gemini AI**, it analyzes images of your hardware in real-tim
     ```bash
     npm run dev
     ```
-
-5.  Open [http://localhost:5173](http://localhost:5173) in your browser.
+30
+5.  Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 📖 Usage
 
