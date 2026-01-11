@@ -2,9 +2,11 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export type Project = {
     title: string;
-    difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+    difficulty: 'Easy' | 'Medium' | 'Hard' | 'Beginner' | 'Intermediate' | 'Advanced'; // Keeping old types for compatibility
     time: string;
     description: string;
+    whySuggested?: string;
+    skillsGained?: string[];
     tools: string[];
     steps: string[];
 };
@@ -29,14 +31,29 @@ export class GeminiService {
         this.genAI = new GoogleGenerativeAI(apiKey);
     }
 
-    async analyzeImage(imageBase64: string, additionalInfo?: string): Promise<AnalysisResult> {
+    async analyzeImage(imageBase64: string, additionalInfo?: string, userProfile?: { occupation: string; year?: string; resumeText: string; skills: string[] }): Promise<AnalysisResult> {
         // Switching to 'gemini-flash-latest' as it is a stable alias and avoids quota issues with 2.0-flash
         const model = this.genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+
+        const profileContext = userProfile ? `
+        User Profile:
+        - Occupation: ${userProfile.occupation}
+        ${userProfile.year ? `- Year/Grade: ${userProfile.year}` : ''}
+        - Resume/Skills Context: ${userProfile.resumeText}
+        
+        Tailor the project suggestions to this user's background. 
+        - If they are a student, focus on learning fundamentals and academic value.
+        - If they are a professional, focus on practical utility or advanced concepts.
+        - Use the resume context to suggest projects that build upon their existing skills or help them develop new desired skills.
+        ` : '';
 
         const prompt = `
       Analyze this image of old computer hardware. 
       Identify the item, its model (if visible or inferable), and approximate year of manufacture.
-      Then, suggest 3 creative and practical DIY projects to repurpose or modernize this specific hardware.
+      
+      ${profileContext}
+
+      Then, suggest **9 creative and practical DIY projects** (3 Easy, 3 Medium, 3 Hard) to repurpose or modernize this specific hardware.
       
       ${additionalInfo ? `Additional context from user: ${additionalInfo}` : ''}
 
@@ -57,12 +74,15 @@ export class GeminiService {
         "projects": [
           {
             "title": "Project Title",
-            "difficulty": "Beginner/Intermediate/Advanced",
+            "difficulty": "Easy", // Must be "Easy", "Medium", or "Hard"
             "time": "Estimated Time (e.g., 2 hours)",
             "description": "A short, catchy description of what this project achieves.",
+            "whySuggested": "One sentence explaining why this fits the user's profile.",
+            "skillsGained": ["Skill 1", "Skill 2", "Skill 3"],
             "tools": ["List", "of", "tools", "needed"],
             "steps": ["Step 1: Title - Detailed explanation...", "Step 2: Title - Detailed explanation..."]
-          }
+          },
+          // ... 8 more projects (3 Easy, 3 Medium, 3 Hard total)
         ]
       }
       

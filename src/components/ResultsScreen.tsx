@@ -1,17 +1,24 @@
 import { useState } from 'react';
-import { ArrowLeft, CheckCircle, Shield, Server, Wrench, DollarSign, Cpu } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Shield, Server, Wrench, DollarSign, Cpu, Star, BookOpen } from 'lucide-react';
 import type { AnalysisResult, Project } from '../services/gemini';
+import type { UserProfile } from './OnboardingScreen';
 
 type ResultsScreenProps = {
   scannedItem: AnalysisResult & { image: string }; // App.tsx adds image to the result
   onBack: () => void;
   onOpenGuide: (projectName: string) => void;
+  userProfile: UserProfile | null;
 };
 
-export function ResultsScreen({ scannedItem, onBack, onOpenGuide }: ResultsScreenProps) {
+export function ResultsScreen({ scannedItem, onBack, onOpenGuide, userProfile }: ResultsScreenProps) {
+  const [selectedDifficulty, setSelectedDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Easy');
   const [selectedProjectIndex, setSelectedProjectIndex] = useState(0);
 
-  const projects = scannedItem.projects;
+  // Filter projects by difficulty
+  const projects = scannedItem.projects.filter(p =>
+    p.difficulty.toLowerCase() === selectedDifficulty.toLowerCase()
+  );
+
   const selectedProject = projects[selectedProjectIndex];
 
   // Helper to get an icon based on difficulty or title (random/hashed or simple logic)
@@ -56,8 +63,8 @@ export function ResultsScreen({ scannedItem, onBack, onOpenGuide }: ResultsScree
             <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden sticky top-28">
               {/* Image */}
               <div className="relative h-80 bg-[var(--color-charcoal)]">
-                <img 
-                  src={scannedItem.image} 
+                <img
+                  src={scannedItem.image}
                   alt={scannedItem.name}
                   className="w-full h-full object-cover"
                 />
@@ -67,7 +74,7 @@ export function ResultsScreen({ scannedItem, onBack, onOpenGuide }: ResultsScree
                   {scannedItem.status}
                 </div>
               </div>
-              
+
               {/* Info */}
               <div className="p-6">
                 <h3 className="text-3xl font-mono text-[var(--color-terminal-green)] mb-2">
@@ -89,9 +96,28 @@ export function ResultsScreen({ scannedItem, onBack, onOpenGuide }: ResultsScree
               <h3 className="text-lg font-mono text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">
                 Suggested Projects
               </h3>
-              <p className="text-sm text-[var(--color-text-secondary)]">
+              <p className="text-sm text-[var(--color-text-secondary)] mb-6">
                 Select a project below to see the details
               </p>
+
+              {/* Difficulty Tabs */}
+              <div className="flex gap-2 p-1 bg-[var(--color-charcoal)] rounded-xl border border-[var(--color-border)]">
+                {(['Easy', 'Medium', 'Hard'] as const).map((diff) => (
+                  <button
+                    key={diff}
+                    onClick={() => {
+                      setSelectedDifficulty(diff);
+                      setSelectedProjectIndex(0);
+                    }}
+                    className={`flex-1 py-2 rounded-lg text-sm font-mono transition-all ${selectedDifficulty === diff
+                        ? 'bg-[var(--color-terminal-green)] text-[var(--color-dark-bg)] font-bold shadow-lg'
+                        : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+                      }`}
+                  >
+                    {diff}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Project Grid */}
@@ -102,11 +128,10 @@ export function ResultsScreen({ scannedItem, onBack, onOpenGuide }: ResultsScree
                   <div
                     key={index}
                     onClick={() => setSelectedProjectIndex(index)}
-                    className={`bg-[var(--color-surface)] border rounded-2xl p-6 cursor-pointer transition-all duration-300 ${
-                      isSelected 
-                        ? 'border-[var(--color-terminal-green)] shadow-[0_0_30px_rgba(0,255,136,0.2)] scale-[1.02]' 
+                    className={`bg-[var(--color-surface)] border rounded-2xl p-6 cursor-pointer transition-all duration-300 ${isSelected
+                        ? 'border-[var(--color-terminal-green)] shadow-[0_0_30px_rgba(0,255,136,0.2)] scale-[1.02]'
                         : 'border-[var(--color-border)] hover:border-[var(--color-terminal-green)]/50'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start gap-6">
                       {/* Icon */}
@@ -134,7 +159,7 @@ export function ResultsScreen({ scannedItem, onBack, onOpenGuide }: ResultsScree
                               </span>
                             </div>
                             <div className="h-2 bg-[var(--color-charcoal)] rounded-full overflow-hidden border border-[var(--color-border)]">
-                              <div 
+                              <div
                                 className="h-full bg-gradient-to-r from-[var(--color-terminal-green)] to-[var(--color-electric-blue)] transition-all duration-500"
                                 style={{ width: `${getDifficultyLevel(project.difficulty)}%` }}
                               />
@@ -150,9 +175,32 @@ export function ResultsScreen({ scannedItem, onBack, onOpenGuide }: ResultsScree
                         </div>
 
                         {/* Description */}
-                        <p className="text-base text-[var(--color-text-secondary)] leading-relaxed">
+                        <p className="text-base text-[var(--color-text-secondary)] leading-relaxed mb-4">
                           {project.description}
                         </p>
+
+                        {/* Personalization Info */}
+                        {project.whySuggested && (
+                          <div className="mb-4 p-3 rounded-lg bg-[var(--color-terminal-green)]/10 border border-[var(--color-terminal-green)]/20">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Star size={14} className="text-[var(--color-terminal-green)]" />
+                              <span className="text-xs font-mono text-[var(--color-terminal-green)] uppercase tracking-wider">Why Suggested</span>
+                            </div>
+                            <p className="text-sm text-[var(--color-text-primary)]">{project.whySuggested}</p>
+                          </div>
+                        )}
+
+                        {/* Skills Gained */}
+                        {project.skillsGained && project.skillsGained.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {project.skillsGained.map((skill, i) => (
+                              <span key={i} className="px-2 py-1 rounded-md bg-[var(--color-charcoal)] border border-[var(--color-border)] text-xs text-[var(--color-text-secondary)] font-mono flex items-center gap-1">
+                                <BookOpen size={12} />
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

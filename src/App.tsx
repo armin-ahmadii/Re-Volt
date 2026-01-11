@@ -3,6 +3,7 @@ import { HomeScreen } from './components/HomeScreen';
 import { ResultsScreen } from './components/ResultsScreen';
 import { StepGuideModal } from './components/StepGuideModal';
 import { ApiKeyModal } from './components/ApiKeyModal';
+import { OnboardingScreen, UserProfile } from './components/OnboardingScreen';
 import { GeminiService, ScanData } from './services/gemini';
 import { Toaster, toast } from 'sonner';
 
@@ -13,7 +14,8 @@ import { Toaster, toast } from 'sonner';
 // The original App.tsx had ScanData. Let's unify.
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<'home' | 'results'>('home');
+  const [currentScreen, setCurrentScreen] = useState<'onboarding' | 'home' | 'results'>('home'); // Default to home, will check profile in useEffect
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [scannedItem, setScannedItem] = useState<ScanData | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string>('');
@@ -26,11 +28,19 @@ export default function App() {
   useEffect(() => {
     const envKey = import.meta.env.VITE_GEMINI_API_KEY;
     const storedKey = localStorage.getItem('gemini_api_key');
+    const storedProfile = localStorage.getItem('user_profile');
 
     if (envKey) {
       setApiKey(envKey);
     } else if (storedKey) {
       setApiKey(storedKey);
+    }
+
+    if (storedProfile) {
+      setUserProfile(JSON.parse(storedProfile));
+      setCurrentScreen('home');
+    } else {
+      setCurrentScreen('onboarding');
     }
   }, []);
 
@@ -38,6 +48,12 @@ export default function App() {
     setApiKey(key);
     localStorage.setItem('gemini_api_key', key);
     toast.success('API Key saved successfully');
+  };
+
+  const handleOnboardingComplete = (profile: UserProfile) => {
+    setUserProfile(profile);
+    localStorage.setItem('user_profile', JSON.stringify(profile));
+    setCurrentScreen('home');
   };
 
   const handleScan = async (image: string, info: string) => {
@@ -52,7 +68,18 @@ export default function App() {
 
     try {
       const geminiService = new GeminiService(apiKey);
-      const result = await geminiService.analyzeImage(image, info);
+      // Pass user profile to analyzeImage
+      const result = await geminiService.analyzeImage(image, info, userProfile || undefined);
+
+      const legacyProject: any = {
+        title: 'Legacy Dashboard',
+        difficulty: 'Beginner',
+        time: '5 minutes',
+        description: 'Repurpose this device into a retro-futuristic dashboard. Displays real-time system stats (CPU, RAM, Temp) with a cyberpunk aesthetic.',
+        tools: ['Python', 'Flask', 'Browser'],
+        steps: ['Connect to backend', 'Generate Dashboard', 'View on device'],
+        skills: ['Networking', 'Web Development', 'System Administration'] // Added skills
+      };
 
       // Map result to ScanData if necessary, but AnalysisResult looks compatible
       // with what we want to display.
@@ -60,7 +87,8 @@ export default function App() {
       const scanDataWithId = {
         ...result,
         id: Date.now().toString(),
-        image: image
+        image: image,
+        projects: [...result.projects, legacyProject]
       };
 
       setScannedItem(scanDataWithId);
@@ -95,6 +123,10 @@ export default function App() {
     <div className="min-h-screen bg-[var(--color-dark-bg)]">
       <Toaster theme="dark" position="top-center" />
 
+      {currentScreen === 'onboarding' && (
+        <OnboardingScreen onComplete={handleOnboardingComplete} />
+      )}
+
       {currentScreen === 'home' && (
         <HomeScreen
           onScan={handleScan}
@@ -107,6 +139,7 @@ export default function App() {
           scannedItem={scannedItem}
           onBack={handleBack}
           onOpenGuide={handleOpenGuide}
+          userProfile={userProfile} // Pass profile to ResultsScreen for "Suggested" logic
         />
       )}
 
