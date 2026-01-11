@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, CheckCircle, Shield, Server, Wrench, DollarSign, Cpu, Star, BookOpen } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Shield, Server, Wrench, DollarSign, Cpu, Star, BookOpen, Search } from 'lucide-react';
 import type { AnalysisResult, Project } from '../services/gemini';
 import type { UserProfile } from './OnboardingScreen';
 
@@ -110,8 +110,8 @@ export function ResultsScreen({ scannedItem, onBack, onOpenGuide, userProfile }:
                       setSelectedProjectIndex(0);
                     }}
                     className={`flex-1 py-2 rounded-lg text-sm font-mono transition-all ${selectedDifficulty === diff
-                        ? 'bg-[var(--color-terminal-green)] text-[var(--color-dark-bg)] font-bold shadow-lg'
-                        : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+                      ? 'bg-[var(--color-terminal-green)] text-[var(--color-dark-bg)] font-bold shadow-lg'
+                      : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
                       }`}
                   >
                     {diff}
@@ -129,8 +129,8 @@ export function ResultsScreen({ scannedItem, onBack, onOpenGuide, userProfile }:
                     key={index}
                     onClick={() => setSelectedProjectIndex(index)}
                     className={`bg-[var(--color-surface)] border rounded-2xl p-6 cursor-pointer transition-all duration-300 ${isSelected
-                        ? 'border-[var(--color-terminal-green)] shadow-[0_0_30px_rgba(0,255,136,0.2)] scale-[1.02]'
-                        : 'border-[var(--color-border)] hover:border-[var(--color-terminal-green)]/50'
+                      ? 'border-[var(--color-terminal-green)] shadow-[0_0_30px_rgba(0,255,136,0.2)] scale-[1.02]'
+                      : 'border-[var(--color-border)] hover:border-[var(--color-terminal-green)]/50'
                       }`}
                   >
                     <div className="flex items-start gap-6">
@@ -192,13 +192,47 @@ export function ResultsScreen({ scannedItem, onBack, onOpenGuide, userProfile }:
 
                         {/* Skills Gained */}
                         {project.skillsGained && project.skillsGained.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-2 mb-4">
                             {project.skillsGained.map((skill, i) => (
                               <span key={i} className="px-2 py-1 rounded-md bg-[var(--color-charcoal)] border border-[var(--color-border)] text-xs text-[var(--color-text-secondary)] font-mono flex items-center gap-1">
                                 <BookOpen size={12} />
                                 {skill}
                               </span>
                             ))}
+                          </div>
+                        )}
+
+                        {/* Recommended Tutorials */}
+                        {project.tutorialVideos && project.tutorialVideos.length > 0 && (
+                          <div className="mb-4">
+                            <h5 className="text-xs font-mono text-[var(--color-text-secondary)] uppercase tracking-wider mb-2 flex items-center gap-2">
+                              <span className="text-[#FF0000]">▶</span> Recommended Tutorials
+                            </h5>
+                            <div className="flex flex-col gap-2">
+                              {project.tutorialVideos.map((video, i) => {
+                                // Smart Redirect: Uses DuckDuckGo's !ducky to redirect to the first result on YouTube
+                                // This acts like a direct link but finds the video dynamically, avoiding broken URLs.
+                                const smartRedirectUrl = `https://duckduckgo.com/?q=!ducky+site:youtube.com+${encodeURIComponent(video.title + ' ' + video.channel)}`;
+
+                                return (
+                                  <div key={i} className="flex items-center gap-2 group">
+                                    <a
+                                      href={smartRedirectUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex-1 text-sm text-[var(--color-text-primary)] hover:text-[var(--color-terminal-green)] transition-colors flex items-center gap-2"
+                                      onClick={(e) => e.stopPropagation()} // Prevent card click
+                                    >
+                                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-border)] group-hover:bg-[var(--color-terminal-green)] transition-colors" />
+                                      <span>
+                                        <span className="font-medium">{video.title}</span>
+                                        <span className="text-[var(--color-text-secondary)] ml-1">by {video.channel}</span>
+                                      </span>
+                                    </a>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
                       </div>

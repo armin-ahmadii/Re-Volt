@@ -7,6 +7,7 @@ export type Project = {
     description: string;
     whySuggested?: string;
     skillsGained?: string[];
+    tutorialVideos?: { title: string; channel: string }[]; // Specific highly-rated videos
     tools: string[];
     steps: string[];
 };
@@ -55,6 +56,9 @@ export class GeminiService {
 
       Then, suggest **9 creative and practical DIY projects** (3 Easy, 3 Medium, 3 Hard) to repurpose or modernize this specific hardware.
       
+      For each project, identify **3 specific, highly-rated YouTube tutorials** that are relevant. 
+      Provide the **exact video title** and the **channel name**.
+      
       ${additionalInfo ? `Additional context from user: ${additionalInfo}` : ''}
 
       CRITICAL INSTRUCTION: You are an expert technical tutor. Your goal is to educate the user.
@@ -79,6 +83,10 @@ export class GeminiService {
             "description": "A short, catchy description of what this project achieves.",
             "whySuggested": "One sentence explaining why this fits the user's profile.",
             "skillsGained": ["Skill 1", "Skill 2", "Skill 3"],
+            "tutorialVideos": [
+              { "title": "Exact Video Title", "channel": "Channel Name" },
+              { "title": "Another Video Title", "channel": "Channel Name" }
+            ],
             "tools": ["List", "of", "tools", "needed"],
             "steps": ["Step 1: Title - Detailed explanation...", "Step 2: Title - Detailed explanation..."]
           },
