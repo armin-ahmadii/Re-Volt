@@ -1,184 +1,36 @@
-import { X, Download, Usb, Settings, Terminal, Check, Copy } from 'lucide-react';
+import { X, Terminal, Check, Copy, Wrench } from 'lucide-react';
 import { useState } from 'react';
-
-type Step = {
-  id: number;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  code?: string;
-  link?: {
-    text: string;
-    url: string;
-  };
-};
+import type { Project } from '../services/gemini';
 
 type StepGuideModalProps = {
   projectName: string;
+  project?: Project;
   onClose: () => void;
 };
 
-export function StepGuideModal({ projectName, onClose }: StepGuideModalProps) {
+export function StepGuideModal({ projectName, project, onClose }: StepGuideModalProps) {
   const [copiedStep, setCopiedStep] = useState<number | null>(null);
-  const [generationStatus, setGenerationStatus] = useState<'idle' | 'generating' | 'success' | 'error'>('idle');
-  const [dashboardUrl, setDashboardUrl] = useState<string>('');
-  const [errorMsg, setErrorMsg] = useState<string>('');
 
-  const handleGenerateDashboard = async () => {
-    setGenerationStatus('generating');
-    try {
-      // 1. Get Local IP
-      const statsRes = await fetch('http://localhost:5000/stats');
-      const statsData = await statsRes.json();
-      const ip = statsData.ip_address || 'localhost';
-
-      // 2. Generate Dashboard
-      const genRes = await fetch('http://localhost:5000/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          device_name: 'Legacy Device',
-          os_version: 'Unknown'
-        })
-      });
-
-      if (!genRes.ok) throw new Error('Generation failed');
-
-      setDashboardUrl(`http://${ip}:5000/display`);
-      setGenerationStatus('success');
-    } catch (err) {
-      console.error(err);
-      setErrorMsg('Failed to connect to backend. Is python app.py running?');
-      setGenerationStatus('error');
-    }
-  };
-
-  if (projectName === 'Legacy Dashboard') {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-[fade-in_0.3s_ease-out] p-4 lg:p-8">
-        <div className="bg-[var(--color-dark-bg)] w-full max-w-2xl rounded-3xl border border-[var(--color-border)] flex flex-col overflow-hidden shadow-[0_0_60px_rgba(0,255,136,0.3)]">
-          <div className="bg-[var(--color-surface)] border-b border-[var(--color-border)] px-8 py-6 flex items-center justify-between">
-            <h2 className="text-2xl font-mono text-[var(--color-terminal-green)]">Legacy Dashboard Setup</h2>
-            <button onClick={onClose} className="p-2 hover:bg-[var(--color-charcoal)] rounded-lg transition-colors">
-              <X size={24} className="text-[var(--color-text-primary)]" />
-            </button>
-          </div>
-
-          <div className="p-8 flex flex-col items-center text-center gap-6">
-            <div className="w-20 h-20 rounded-full bg-[var(--color-terminal-green)]/10 flex items-center justify-center mb-2">
-              <Terminal size={40} className="text-[var(--color-terminal-green)]" />
-            </div>
-
-            <p className="text-[var(--color-text-secondary)] text-lg">
-              Revive your old device by turning it into a futuristic system monitor.
-            </p>
-
-            {generationStatus === 'idle' && (
-              <button
-                onClick={handleGenerateDashboard}
-                className="px-8 py-4 rounded-xl bg-[var(--color-terminal-green)] text-[var(--color-dark-bg)] font-mono text-lg uppercase tracking-wider hover:shadow-[0_0_30px_rgba(0,255,136,0.4)] transition-all"
-              >
-                Generate Dashboard
-              </button>
-            )}
-
-            {generationStatus === 'generating' && (
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-8 h-8 border-2 border-[var(--color-terminal-green)] border-t-transparent rounded-full animate-spin" />
-                <p className="font-mono text-[var(--color-terminal-green)] animate-pulse">
-                  Consulting Gemini AI...
-                </p>
-              </div>
-            )}
-
-            {generationStatus === 'success' && (
-              <div className="w-full bg-[var(--color-surface)] border border-[var(--color-terminal-green)] rounded-xl p-6 animate-[scale-in_0.3s_ease-out]">
-                <h3 className="text-[var(--color-terminal-green)] font-mono text-xl mb-4">Dashboard Ready!</h3>
-                <p className="text-[var(--color-text-secondary)] mb-4">
-                  Open this URL on your legacy device:
-                </p>
-                <div className="bg-black p-4 rounded-lg border border-[var(--color-border)] mb-4 break-all">
-                  <code className="text-[var(--color-electric-blue)] text-lg">{dashboardUrl}</code>
-                </div>
-                <p className="text-sm text-[var(--color-text-secondary)]">
-                  Make sure the device is on the same Wi-Fi network.
-                </p>
-              </div>
-            )}
-
-            {generationStatus === 'error' && (
-              <div className="text-red-500 font-mono bg-red-500/10 p-4 rounded-xl border border-red-500/20">
-                {errorMsg}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-
-  const steps: Step[] = [
-    {
-      id: 1,
-      title: 'Download Ubuntu Server ISO',
-      description: 'Download the latest LTS version of Ubuntu Server. This will be the operating system for your Pi-Hole.',
-      icon: <Download size={24} className="text-[var(--color-terminal-green)]" />,
-      link: {
-        text: 'ubuntu.com/download/server',
-        url: 'https://ubuntu.com/download/server'
-      }
-    },
-    {
-      id: 2,
-      title: 'Flash to USB Drive using BalenaEtcher',
-      description: 'Use BalenaEtcher to create a bootable USB drive. This will allow you to install Ubuntu on your PC.',
-      icon: <Usb size={24} className="text-[var(--color-electric-blue)]" />,
-      link: {
-        text: 'balena.io/etcher',
-        url: 'https://balena.io/etcher'
-      }
-    },
-    {
-      id: 3,
-      title: 'Access BIOS and Boot from USB',
-      description: 'Restart the Dell Optiplex and press F12 during startup to access the boot menu. Select your USB drive.',
-      icon: <Settings size={24} className="text-[var(--color-neon-purple)]" />
-    },
-    {
-      id: 4,
-      title: 'Install Ubuntu Server',
-      description: 'Follow the installation wizard. Choose default options and set up your username and password.',
-      icon: <Terminal size={24} className="text-[var(--color-terminal-green)]" />
-    },
-    {
-      id: 5,
-      title: 'Update System Packages',
-      description: 'After installation, update all system packages to ensure you have the latest security patches.',
-      icon: <Terminal size={24} className="text-[var(--color-electric-blue)]" />,
-      code: 'sudo apt-get update && sudo apt-get upgrade -y'
-    },
-    {
-      id: 6,
-      title: 'Install Docker',
-      description: 'Install Docker to run Pi-Hole in a container. This keeps everything organized and easy to manage.',
-      icon: <Terminal size={24} className="text-[var(--color-terminal-green)]" />,
-      code: 'curl -fsSL https://get.docker.com -o get-docker.sh\nsudo sh get-docker.sh'
-    },
-    {
-      id: 7,
-      title: 'Deploy Pi-Hole Container',
-      description: 'Run the Pi-Hole Docker container. This will start blocking ads on your network.',
-      icon: <Terminal size={24} className="text-[var(--color-neon-purple)]" />,
-      code: 'docker run -d \\\n  --name pihole \\\n  -p 53:53/tcp -p 53:53/udp \\\n  -p 80:80 \\\n  -e TZ="America/New_York" \\\n  -v "pihole:/etc/pihole" \\\n  --restart=unless-stopped \\\n  pihole/pihole:latest'
-    },
-    {
-      id: 8,
-      title: 'Configure Router DNS',
-      description: 'Set your router\'s DNS server to point to the IP address of your Pi-Hole. All devices will now use it.',
-      icon: <Check size={24} className="text-[var(--color-terminal-green)]" />
-    }
-  ];
+  // If no project is passed (shouldn't happen with real data flow), we could show a loading state or error.
+  // For now, let's assume project is present or fallback to empty.
+  
+  const steps = project?.steps.map((stepText, index) => {
+    // Simple heuristic to detect code blocks:
+    // If the step contains "Run", "Type", "Command" followed by something that looks like code,
+    // or if we just split by newline and check for code-like characters.
+    // For simplicity, let's assume the API returns text. 
+    // If we want code blocks, we might need to ask the API for them separately or parse markdown.
+    // Let's try to parse markdown code blocks if the API returns them (even though we asked for JSON).
+    // Or just treat the whole step as description.
+    
+    return {
+      id: index + 1,
+      title: `Step ${index + 1}`,
+      description: stepText,
+      icon: <Wrench size={24} className="text-[var(--color-terminal-green)]" />,
+      code: undefined // We'd need smarter parsing to extract code
+    };
+  }) || [];
 
   const handleCopyCode = (stepId: number, code: string) => {
     navigator.clipboard.writeText(code);
@@ -234,22 +86,10 @@ export function StepGuideModal({ projectName, onClose }: StepGuideModalProps) {
                         </h3>
                       </div>
                     </div>
-
-                    <p className="text-base text-[var(--color-text-secondary)] mb-4 leading-relaxed">
+                    
+                    <p className="text-base text-[var(--color-text-secondary)] mb-4 leading-relaxed whitespace-pre-wrap font-sans">
                       {step.description}
                     </p>
-
-                    {/* Link */}
-                    {step.link && (
-                      <a
-                        href={step.link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block px-4 py-2 rounded-lg bg-[var(--color-terminal-green)]/10 border border-[var(--color-terminal-green)]/30 text-[var(--color-terminal-green)] text-sm font-mono hover:bg-[var(--color-terminal-green)]/20 transition-colors"
-                      >
-                        {step.link.text} →
-                      </a>
-                    )}
 
                     {/* Code block */}
                     {step.code && (

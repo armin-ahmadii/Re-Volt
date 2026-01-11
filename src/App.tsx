@@ -1,66 +1,85 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HomeScreen } from './components/HomeScreen';
 import { ResultsScreen } from './components/ResultsScreen';
 import { StepGuideModal } from './components/StepGuideModal';
+import { ApiKeyModal } from './components/ApiKeyModal';
+import { GeminiService, ScanData } from './services/gemini';
+import { Toaster, toast } from 'sonner';
 
-export type ScanData = {
-  id: string;
-  name: string;
-  model: string;
-  year: string;
-  image: string;
-  status?: string;
-  recyclability_score?: number;
-  toxic_materials?: string[];
-  disposal_steps?: string[];
-};
+// Adapt ScanData to match what ResultsScreen expects if needed, 
+// or update ResultsScreen to match GeminiService's AnalysisResult.
+// For now, let's assume they are compatible or we map them.
+// The GeminiService returns AnalysisResult which has 'projects'.
+// The original App.tsx had ScanData. Let's unify.
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<'home' | 'results'>('home');
   const [scannedItem, setScannedItem] = useState<ScanData | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string>('');
-  const [isScanning, setIsScanning] = useState(false);
+
+  // API Key State
+  const [apiKey, setApiKey] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  useEffect(() => {
+    const envKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const storedKey = localStorage.getItem('gemini_api_key');
+
+    if (envKey) {
+      setApiKey(envKey);
+    } else if (storedKey) {
+      setApiKey(storedKey);
+    }
+  }, []);
+
+  const handleSaveApiKey = (key: string) => {
+    setApiKey(key);
+    localStorage.setItem('gemini_api_key', key);
+    toast.success('API Key saved successfully');
+  };
 
   const handleScan = async (image: string, info: string) => {
-    setIsScanning(true);
+    if (!apiKey) {
+      toast.error('Please set your Gemini API Key in settings first');
+      setShowSettings(true);
+      return;
+    }
+
+    setIsAnalyzing(true);
+    const toastId = toast.loading('Analyzing hardware...');
+
     try {
-      const response = await fetch('http://localhost:5000/identify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image, additional_info: info })
-      });
+      const geminiService = new GeminiService(apiKey);
+      const result = await geminiService.analyzeImage(image, info);
 
-      if (!response.ok) {
-        throw new Error('Failed to analyze image');
-      }
-
-      const data = await response.json();
-      
-      const newScan: ScanData = {
+      // Map result to ScanData if necessary, but AnalysisResult looks compatible
+      // with what we want to display.
+      // We might need to ensure IDs are added if ResultsScreen needs them.
+      const scanDataWithId = {
+        ...result,
         id: Date.now().toString(),
-        name: data.device_type || 'Unknown Device',
-        model: data.model || '',
-        year: data.release_year || 'Unknown',
-        image: image,
-        status: 'Identified',
-        recyclability_score: data.recyclability_score,
-        toxic_materials: data.toxic_materials || [],
-        disposal_steps: data.nearest_disposal_steps || []
+        image: image
       };
 
-      setScannedItem(newScan);
+      setScannedItem(scanDataWithId);
       setCurrentScreen('results');
-    } catch (error) {
-      console.error('Scan failed:', error);
-      alert('Failed to analyze image. Please ensure the backend is running.');
+      toast.dismiss(toastId);
+      toast.success('Analysis complete!');
+    } catch (error: any) {
+      console.error(error);
+      toast.dismiss(toastId);
+      // Use the actual error message which might be quota related
+      toast.error(error.message || 'Failed to analyze image. Please check your API key.');
     } finally {
-      setIsScanning(false);
+      setIsAnalyzing(false);
     }
   };
 
   const handleBack = () => {
     setCurrentScreen('home');
+    setScannedItem(null);
   };
 
   const handleOpenGuide = (projectName: string) => {
@@ -74,25 +93,43 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[var(--color-dark-bg)]">
+      <Toaster theme="dark" position="top-center" />
+
       {currentScreen === 'home' && (
-        <HomeScreen 
-          onScan={handleScan} 
-          isScanning={isScanning}
+        <HomeScreen
+          onScan={handleScan}
+          onOpenSettings={() => setShowSettings(true)}
         />
       )}
+
       {currentScreen === 'results' && scannedItem && (
-        <ResultsScreen 
-          scannedItem={scannedItem} 
+        <ResultsScreen
+          scannedItem={scannedItem}
           onBack={handleBack}
           onOpenGuide={handleOpenGuide}
         />
       )}
+
       {showGuide && (
-        <StepGuideModal 
+        <StepGuideModal
           projectName={selectedProject}
           onClose={handleCloseGuide}
+          // We might need to pass the full project data here if StepGuideModal 
+          // doesn't have it. For now, assuming it might need refactoring 
+          // or we pass the project object.
+          // Let's assume StepGuideModal can find the project in scannedItem
+          // or we pass the project details directly.
+          // For this iteration, I'll pass the project object if I can find it.
+          project={scannedItem?.projects.find((p: any) => p.title === selectedProject)}
         />
       )}
+
+      <ApiKeyModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        onSave={handleSaveApiKey}
+        initialKey={apiKey}
+      />
     </div>
   );
 }

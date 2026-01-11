@@ -1,19 +1,12 @@
-import { Camera, CheckCircle, Upload, Loader2 } from 'lucide-react';
+import { Camera, CheckCircle, Upload, Settings } from 'lucide-react';
 import { useState } from 'react';
 
 type HomeScreenProps = {
   onScan: (image: string, info: string) => void;
-  isScanning: boolean;
+  onOpenSettings: () => void;
 };
 
-type RecentScan = {
-  id: string;
-  image: string;
-  name: string;
-  status: string;
-};
-
-export function HomeScreen({ onScan, isScanning }: HomeScreenProps) {
+export function HomeScreen({ onScan, onOpenSettings }: HomeScreenProps) {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [additionalInfo, setAdditionalInfo] = useState('');
 
@@ -28,38 +21,25 @@ export function HomeScreen({ onScan, isScanning }: HomeScreenProps) {
     }
   };
 
-  const recentScans: RecentScan[] = [
-    {
-      id: '1',
-      image: 'https://images.unsplash.com/photo-1591238372408-8b98667c0460?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvbGQlMjBjb21wdXRlciUyMGhhcmR3YXJlfGVufDF8fHx8MTc2ODA4MzUwOXww&ixlib=rb-4.1.0&q=80&w=1080',
-      name: 'Old PC',
-      status: 'Project Found!'
-    },
-    {
-      id: '2',
-      image: 'https://images.unsplash.com/photo-1716072912080-0550a8945c5e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx2aW50YWdlJTIwcm91dGVyJTIwZWxlY3Ryb25pY3N8ZW58MXx8fHwxNzY4MDgzNTA5fDA&ixlib=rb-4.1.0&q=80&w=1080',
-      name: 'Router',
-      status: 'Salvageable'
-    },
-    {
-      id: '3',
-      image: 'https://images.unsplash.com/photo-1592509314528-afd0c8241a04?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZXRybyUyMGdhbWVib3klMjBoYW5kaGVsZHxlbnwxfHx8fDE3NjgwODM1MDl8MA&ixlib=rb-4.1.0&q=80&w=1080',
-      name: 'Gameboy',
-      status: 'Project Found!'
-    }
-  ];
-
   return (
     <div className="flex flex-col min-h-screen animate-[fade-in_0.5s_ease-out]">
       {/* Header */}
       <header className="pt-16 pb-12 px-8 lg:px-16 max-w-7xl mx-auto w-full">
         <h1 className="text-5xl lg:text-6xl mb-3 text-[var(--color-terminal-green)]">
-          TechCycle
+          Re-Volt
         </h1>
         <p className="text-[var(--color-text-secondary)] text-lg tracking-wide">
           Identify. Repurpose. Revive.
         </p>
       </header>
+
+      <button
+        onClick={onOpenSettings}
+        className="absolute top-8 right-8 p-3 rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)] hover:text-[var(--color-terminal-green)] transition-colors"
+        title="API Settings"
+      >
+        <Settings size={24} />
+      </button>
 
       {/* Main Content Area */}
       <div className="flex-1 px-8 lg:px-16 pb-12">
@@ -131,16 +111,6 @@ export function HomeScreen({ onScan, isScanning }: HomeScreenProps) {
                   </div>
                 </div>
               )}
-
-              {/* Loading Overlay */}
-              {isScanning && (
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-md z-50 flex flex-col items-center justify-center">
-                  <Loader2 size={64} className="text-[var(--color-terminal-green)] animate-spin mb-4" />
-                  <p className="text-xl font-mono text-[var(--color-terminal-green)] animate-pulse">
-                    ANALYZING HARDWARE...
-                  </p>
-                </div>
-              )}
             </div>
 
             {/* Additional Info Input */}
@@ -178,47 +148,12 @@ export function HomeScreen({ onScan, isScanning }: HomeScreenProps) {
             {/* Scan Button */}
             <button
               onClick={() => uploadedImage && onScan(uploadedImage, additionalInfo)}
-              disabled={!uploadedImage || isScanning}
+              disabled={!uploadedImage}
               className="w-full h-16 rounded-2xl bg-gradient-to-r from-[var(--color-terminal-green)] to-[var(--color-electric-blue)] text-[var(--color-dark-bg)] font-mono uppercase tracking-wider flex items-center justify-center gap-3 hover:shadow-[0_0_30px_rgba(0,212,255,0.5)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
               <Camera size={24} />
-              {isScanning ? 'Scanning...' : 'Analyze Hardware'}
+              Analyze Hardware
             </button>
-
-            {/* Recent Scans */}
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6">
-              <h3 className="text-sm font-mono text-[var(--color-text-secondary)] mb-4 uppercase tracking-wider">
-                Recent Scans
-              </h3>
-              <div className="space-y-3">
-                {recentScans.map((scan) => (
-                  <div
-                    key={scan.id}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-charcoal)] border border-[var(--color-border)] hover:border-[var(--color-terminal-green)] transition-colors cursor-pointer group"
-                  >
-                    <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-[var(--color-border)] flex-shrink-0">
-                      <img
-                        src={scan.image}
-                        alt={scan.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[var(--color-text-primary)] mb-1 truncate">
-                        {scan.name}
-                      </p>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-terminal-green)]/20 text-[var(--color-terminal-green)] inline-block font-mono">
-                        {scan.status}
-                      </span>
-                    </div>
-                    <CheckCircle
-                      size={18}
-                      className="text-[var(--color-terminal-green)] fill-[var(--color-terminal-green)] opacity-0 group-hover:opacity-100 transition-opacity"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </div>
