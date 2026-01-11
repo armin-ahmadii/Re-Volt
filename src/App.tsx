@@ -30,10 +30,10 @@ export default function App() {
     const storedKey = localStorage.getItem('gemini_api_key');
     const storedProfile = localStorage.getItem('user_profile');
 
-    if (envKey) {
-      setApiKey(envKey);
-    } else if (storedKey) {
+    if (storedKey) {
       setApiKey(storedKey);
+    } else if (envKey) {
+      setApiKey(envKey);
     }
 
     if (storedProfile) {
