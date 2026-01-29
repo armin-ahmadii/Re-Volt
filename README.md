@@ -37,7 +37,7 @@ Powered by **Google Gemini AI**, it analyzes images of your hardware in real-tim
 
 1.  **Clone the repository**:
     ```bash
-    git clone https://github.com/yourusername/re-volt.git
+    git clone https://github.com/armin-ahmadii/re-volt.git
     cd re-volt
     ```
 
@@ -46,18 +46,12 @@ Powered by **Google Gemini AI**, it analyzes images of your hardware in real-tim
     npm install
     ```
 
-3.  **Set up Environment Variables (Optional)**:
-    Create a `.env` file in the root directory if you want to hardcode your API key for dev (not recommended for public repos):
-    ```env
-    VITE_GEMINI_API_KEY=your_api_key_here
-    ```
-
-4.  **Run the development server**:
+3.  **Run the development server**:
     ```bash
     npm run dev
     ```
 30
-5.  Open [http://localhost:3000](http://localhost:3000) in your browser.
+4.  Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 📖 Usage
 
