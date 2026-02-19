@@ -41,32 +41,6 @@ export function ApiKeyModal({ isOpen, onClose, onSave, onReset, initialKey = '' 
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="space-y-2">
-            <label htmlFor="apiKey" className="block text-sm font-mono text-[var(--color-text-secondary)] uppercase tracking-wider">
-              Gemini API Key
-            </label>
-            <input
-              id="apiKey"
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="AIzaSy..."
-              className="w-full px-4 py-3 rounded-xl bg-[var(--color-charcoal)] border border-[var(--color-border)] text-[var(--color-text-primary)] font-mono text-sm focus:border-[var(--color-terminal-green)] focus:outline-none transition-colors placeholder:text-[var(--color-text-secondary)]/50"
-              required
-            />
-            <p className="text-xs text-[var(--color-text-secondary)] flex items-center gap-1">
-              Don't have a key?
-              <a
-                href="https://aistudio.google.com/app/apikey"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[var(--color-terminal-green)] hover:underline flex items-center gap-0.5"
-              >
-                ‎ Get one here <ExternalLink size={10} />
-              </a>
-            </p>
-          </div>
-
           {onReset && (
             <div className="pt-4 border-t border-[var(--color-border)]">
               <h3 className="text-sm font-mono text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">
