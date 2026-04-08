@@ -1,4 +1,4 @@
-# Re-Volt ⚡️
+# Re-Volt
 
 **Identify. Repurpose. Re-Volt.**
 
